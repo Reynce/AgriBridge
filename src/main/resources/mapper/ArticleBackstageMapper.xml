@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.reyn.mapper.ArticleBackstageMapper">
+
+    <sql id="selectArticleVo">
+        select id, title, summary, content, author_name, category, article_status, published_at, created_at, updated_at from article
+    </sql>
+
+    <select id="selectArticleList" parameterType="com.reyn.objects.entity.Article" resultType="com.reyn.objects.entity.Article">
+        <include refid="selectArticleVo"/>
+        <where>
+            <if test="title != null  and title != ''"> and title like concat('%', #{title}, '%')</if>
+            <if test="authorName != null  and authorName != ''"> and author_name like concat('%', #{authorName}, '%')</if>
+            <if test="category != null  and category != ''"> and category like concat('%', #{category}, '%')</if>
+            <if test="articleStatus != null "> and article_status = #{articleStatus}</if>
+            <if test="params.beginPublishedAt != null and params.beginPublishedAt != '' and params.endPublishedAt != null and params.endPublishedAt != ''"> and published_at between #{params.beginPublishedAt} and #{params.endPublishedAt}</if>
+        </where>
+    </select>
+
+    <!-- 只保留一个 selectArticleById，使用 resultType -->
+    <select id="selectArticleById" parameterType="Long" resultType="com.reyn.objects.entity.Article">
+        <include refid="selectArticleVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertArticle" parameterType="com.reyn.objects.entity.Article" useGeneratedKeys="true" keyProperty="id">
+        insert into article
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="title != null and title != ''">title,</if>
+            <if test="summary != null">summary,</if>
+            <if test="content != null and content != ''">content,</if>
+            <if test="authorName != null and authorName != ''">author_name,</if>
+            <if test="category != null and category != ''">category,</if>
+            <if test="articleStatus != null">article_status,</if>
+            <if test="publishedAt != null">published_at,</if>
+            <if test="createdAt != null">created_at,</if>
+            <if test="updatedAt != null">updated_at,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="title != null and title != ''">#{title},</if>
+            <if test="summary != null">#{summary},</if>
+            <if test="content != null and content != ''">#{content},</if>
+            <if test="authorName != null and authorName != ''">#{authorName},</if>
+            <if test="category != null and category != ''">#{category},</if>
+            <if test="articleStatus != null">#{articleStatus},</if>
+            <if test="publishedAt != null">#{publishedAt},</if>
+            <if test="createdAt != null">#{createdAt},</if>
+            <if test="updatedAt != null">#{updatedAt},</if>
+        </trim>
+    </insert>
+
+    <update id="updateArticle" parameterType="com.reyn.objects.entity.Article">
+        update article
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="title != null and title != ''">title = #{title},</if>
+            <if test="summary != null">summary = #{summary},</if>
+            <if test="content != null and content != ''">content = #{content},</if>
+            <if test="authorName != null and authorName != ''">author_name = #{authorName},</if>
+            <if test="category != null and category != ''">category = #{category},</if>
+            <if test="articleStatus != null">article_status = #{articleStatus},</if>
+            <if test="publishedAt != null">published_at = #{publishedAt},</if>
+            <if test="createdAt != null">created_at = #{createdAt},</if>
+            <if test="updatedAt != null">updated_at = #{updatedAt},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteArticleById" parameterType="Long">
+        delete from article where id = #{id}
+    </delete>
+
+    <delete id="deleteArticleByIds" parameterType="String">
+        delete from article where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

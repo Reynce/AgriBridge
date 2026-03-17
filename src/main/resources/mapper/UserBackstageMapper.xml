@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.reyn.mapper.UserBackstageMapper">
+    
+    <resultMap type="com.reyn.objects.entity.User" id="UserResult">
+        <result property="id"    column="id"    />
+        <result property="username"    column="username"    />
+        <result property="account"    column="account"    />
+        <result property="password"    column="password"    />
+        <result property="email"    column="email"    />
+        <result property="phone"    column="phone"    />
+        <result property="accountStatus"    column="account_status"    />
+        <result property="avatar"    column="avatar"    />
+        <result property="createdAt"    column="created_at"    />
+        <result property="updatedAt"    column="updated_at"    />
+    </resultMap>
+
+    <sql id="selectUserVo">
+        select id, username, account, password, email, phone, account_status, avatar, created_at, updated_at from user
+    </sql>
+
+    <select id="selectUserList" parameterType="com.reyn.objects.entity.User" resultMap="UserResult">
+        <include refid="selectUserVo"/>
+        <where>  
+            <if test="username != null  and username != ''"> and username like concat('%', #{username}, '%')</if>
+            <if test="account != null  and account != ''"> and account = #{account}</if>
+            <if test="password != null  and password != ''"> and password = #{password}</if>
+            <if test="email != null  and email != ''"> and email = #{email}</if>
+            <if test="phone != null  and phone != ''"> and phone = #{phone}</if>
+            <if test="accountStatus != null "> and account_status = #{accountStatus}</if>
+        </where>
+    </select>
+    
+    <select id="selectUserById" parameterType="Long" resultMap="UserResult">
+        <include refid="selectUserVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertUser" parameterType="com.reyn.objects.entity.User" useGeneratedKeys="true" keyProperty="id">
+        insert into user
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="username != null and username != ''">username,</if>
+            <if test="account != null and account != ''">account,</if>
+            <if test="password != null and password != ''">password,</if>
+            <if test="email != null">email,</if>
+            <if test="phone != null">phone,</if>
+            <if test="accountStatus != null">account_status,</if>
+            <if test="avatar != null">avatar,</if>
+            <if test="createdAt != null">created_at,</if>
+            <if test="updatedAt != null">updated_at,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="username != null and username != ''">#{username},</if>
+            <if test="account != null and account != ''">#{account},</if>
+            <if test="password != null and password != ''">#{password},</if>
+            <if test="email != null">#{email},</if>
+            <if test="phone != null">#{phone},</if>
+            <if test="accountStatus != null">#{accountStatus},</if>
+            <if test="avatar != null">#{avatar},</if>
+            <if test="createdAt != null">#{createdAt},</if>
+            <if test="updatedAt != null">#{updatedAt},</if>
+         </trim>
+    </insert>
+
+    <update id="updateUser" parameterType="com.reyn.objects.entity.User">
+        update user
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="username != null and username != ''">username = #{username},</if>
+            <if test="account != null and account != ''">account = #{account},</if>
+            <if test="password != null and password != ''">password = #{password},</if>
+            <if test="email != null">email = #{email},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="accountStatus != null">account_status = #{accountStatus},</if>
+            <if test="avatar != null">avatar = #{avatar},</if>
+            <if test="createdAt != null">created_at = #{createdAt},</if>
+            <if test="updatedAt != null">updated_at = #{updatedAt},</if>
+        </trim>
+        where id = #{id}
+    </update>
+    <update id="forbidByIds">
+        update user set account_status=0
+        where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+    <update id="resetUserPwd">
+        update user set password = #{pwd}
+        where id in
+        <foreach item="id" collection="ids" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <delete id="deleteUserById" parameterType="Long">
+        delete from user where id = #{id}
+    </delete>
+
+    <delete id="deleteUserByIds" parameterType="String">
+        delete from user where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.reyn.mapper.ProductReviewMapper">
+
+    <resultMap id="ProductReviewVOMap" type="com.reyn.objects.vo.ProductReviewVO">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="username" column="username"/>
+        <result property="userAvatar" column="avatar"/>
+        <result property="rating" column="rating"/>
+        <result property="content" column="content"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="imageUrls" column="review_images" typeHandler="com.baomidou.mybatisplus.extension.handlers.FastjsonTypeHandler"/>
+    </resultMap>
+
+    <resultMap id="MerchantReviewVOMap" type="com.reyn.objects.vo.MerchantReviewVO" extends="ProductReviewVOMap">
+        <result property="productTitle" column="productTitle"/>
+        <result property="productMainImage" column="productMainImage"/>
+    </resultMap>
+
+    <select id="selectProductReviews" parameterType="map" resultMap="ProductReviewVOMap">
+        SELECT
+            pr.id,
+            pr.user_id,
+            u.username,
+            u.avatar,
+            pr.rating,
+            pr.content,
+            pr.created_at,
+            pr.review_images
+        FROM product_review pr
+                 LEFT JOIN user u ON pr.user_id = u.id
+        WHERE pr.product_id = #{productId}
+        ORDER BY pr.created_at DESC
+            LIMIT #{offset}, #{size}
+    </select>
+
+    <select id="selectReviewImagesByCommentId" parameterType="long" resultType="string">
+        SELECT image_url
+        FROM review_image
+        WHERE comment_id = #{commentId}
+        ORDER BY created_at ASC
+    </select>
+
+    <select id="selectMerchantReviews" resultMap="MerchantReviewVOMap">
+        SELECT
+        pr.id,
+        pr.user_id as user_id,
+        u.username,
+        u.avatar as avatar,
+        pr.rating,
+        pr.content,
+        pr.created_at as created_at,
+        pr.review_images as review_images,
+        p.title as productTitle,
+        pi.url as productMainImage
+        FROM product_review pr
+        LEFT JOIN user u ON pr.user_id = u.id
+        LEFT JOIN product p ON pr.product_id = p.id
+        LEFT JOIN product_image pi ON p.id = pi.product_id AND pi.image_type = 0
+        WHERE p.saller_id = #{sellerId}
+        <if test="startDate != null">
+            AND pr.created_at &gt;= #{startDate}
+        </if>
+        ORDER BY pr.created_at DESC
+    </select>
+
+    <select id="selectAdminReviews" resultMap="MerchantReviewVOMap">
+        SELECT
+        pr.id,
+        pr.user_id as user_id,
+        u.username,
+        u.avatar as avatar,
+        pr.rating,
+        pr.content,
+        pr.created_at as created_at,
+        pr.review_images as review_images,
+        p.title as productTitle,
+        pi.url as productMainImage
+        FROM product_review pr
+        LEFT JOIN user u ON pr.user_id = u.id
+        LEFT JOIN product p ON pr.product_id = p.id
+        LEFT JOIN product_image pi ON p.id = pi.product_id AND pi.image_type = 0
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (pr.content LIKE CONCAT('%', #{keyword}, '%') OR p.title LIKE CONCAT('%', #{keyword}, '%') OR u.username LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="rating != null">
+                AND pr.rating = #{rating}
+            </if>
+        </where>
+        ORDER BY pr.created_at DESC
+    </select>
+
+</mapper>

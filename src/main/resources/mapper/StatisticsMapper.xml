@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.reyn.mapper.StatisticsMapper">
+
+    <resultMap type="com.reyn.objects.vo.DashboardStatsVO" id="DashboardStatsResult">
+        <result property="totalSales" column="total_sales"/>
+        <result property="todayNewUsers" column="today_new_users"/>
+        <result property="pendingOrders" column="pending_orders"/>
+        <result property="activeMerchants" column="active_merchants"/>
+    </resultMap>
+
+    <resultMap type="com.reyn.objects.vo.SalesTrendVO" id="SalesTrendResult">
+        <result property="date" column="date"/>
+        <result property="salesAmount" column="sales_amount"/>
+        <result property="orderCount" column="order_count"/>
+    </resultMap>
+
+    <resultMap type="com.reyn.objects.vo.UserGrowthVO" id="UserGrowthResult">
+        <result property="date" column="date"/>
+        <result property="newUserCount" column="new_user_count"/>
+        <result property="totalUserCount" column="total_user_count"/>
+    </resultMap>
+
+    <!-- 获取仪表板统计数据 -->
+    <select id="getDashboardStats" resultMap="DashboardStatsResult">
+        SELECT
+            (SELECT COALESCE(SUM(total_price), 0)
+             FROM user_order
+             WHERE order_status IN (1, 2, 3) AND payment_status = 1) AS total_sales,
+
+            (SELECT COUNT(*)
+             FROM user
+             WHERE DATE(created_at) = CURDATE()) AS today_new_users,
+
+            (SELECT COUNT(*)
+        FROM user_order
+        WHERE order_status = 1) AS pending_orders,
+
+            (SELECT COUNT(*)
+        FROM merchant
+        WHERE status = 2) AS active_merchants
+    </select>
+
+    <!-- 获取销售趋势数据 -->
+    <select id="getSalesTrend" resultMap="SalesTrendResult">
+        SELECT
+            DATE(created_at) AS date,
+            COALESCE(SUM(total_price), 0) AS sales_amount,
+            COUNT(*) AS order_count
+        FROM user_order
+        WHERE DATE(created_at) BETWEEN #{startDate} AND #{endDate}
+          AND order_status IN (1, 2, 3)
+          AND payment_status = 1
+        GROUP BY DATE(created_at)
+        ORDER BY DATE(created_at)
+    </select>
+
+    <!-- 获取用户增长趋势数据 -->
+    <select id="getUserGrowthTrend" resultMap="UserGrowthResult">
+        WITH daily_stats AS (
+            SELECT
+            DATE(created_at) AS date,
+            COUNT(*) AS daily_new_users
+        FROM user
+        WHERE DATE(created_at) BETWEEN #{startDate} AND #{endDate}
+        GROUP BY DATE(created_at)
+            ),
+            cumulative_stats AS (
+        SELECT
+            ds.date,
+            ds.daily_new_users,
+            SUM(ds.daily_new_users) OVER (ORDER BY ds.date) AS cumulative_users
+        FROM daily_stats ds
+            )
+        SELECT
+            cs.date,
+            cs.daily_new_users AS new_user_count,
+            (SELECT COUNT(*) FROM user WHERE DATE(created_at) &lt;= cs.date) AS total_user_count
+        FROM cumulative_stats cs
+        ORDER BY cs.date
+    </select>
+
+</mapper>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.reyn.mapper.ProductImageMapper">
+
+
+    <select id="getMainImgUrlBySkuId" resultType="java.lang.String">
+        select url from product_image p_img inner join sku s on p_img.product_id = s.product_id
+        where s.id = #{skuId} and p_img.image_type = 0
+    </select>
+    <select id="selectByProductId" resultType="com.reyn.objects.entity.ProductImage">
+        select url from product_image where product_id = #{productId}
+        order by image_type ASC
+    </select>
+</mapper>

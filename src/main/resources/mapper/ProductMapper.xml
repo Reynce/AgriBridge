@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.reyn.mapper.ProductMapper">
+    <select id="getProductBySkuId" parameterType="java.lang.Long" resultType="com.reyn.objects.entity.Product">
+        select *
+        from product p
+                 inner join sku s on p.id = s.product_id
+        where s.id = #{skuId}
+    </select>
+
+    <select id="getProductTitleBySkuId" parameterType="java.lang.Long" resultType="java.lang.String">
+        select p.title
+        from product p
+                 inner join sku s on p.id = s.product_id
+        where s.id = #{skuId}
+    </select>
+
+    <select id="getProductSallerIdBySkuId" parameterType="java.lang.Long" resultType="java.lang.Long">
+        select p.saller_id
+        from product p
+                 inner join sku s on p.id = s.product_id
+        where s.id = #{skuId}
+    </select>
+
+    <update id="updateProductSales">
+        UPDATE product
+        SET sales = sales + #{quantity}
+        WHERE id = #{productId}
+    </update>
+
+</mapper>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.reyn.mapper.UserFavoriteMapper">
+
+    <resultMap id="FavoriteVOMap" type="com.reyn.objects.vo.FavoriteVO">
+        <id property="id" column="id"/>
+        <result property="productId" column="product_id"/>
+        <result property="productTitle" column="product_title"/>
+        <result property="productBrief" column="product_brief"/>
+        <result property="mainImageUrl" column="main_image_url"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <select id="getUserFavoriteList" resultMap="FavoriteVOMap">
+        SELECT
+            uf.id,
+            uf.product_id,
+            p.title AS product_title,
+            p.brief AS product_brief,
+            pi.url AS main_image_url,
+            uf.created_at
+        FROM user_favorite uf
+                 LEFT JOIN product p ON uf.product_id = p.id
+                 LEFT JOIN product_image pi ON p.id = pi.product_id AND pi.image_type = 0
+        WHERE uf.user_id = #{userId}
+        ORDER BY uf.created_at DESC
+    </select>
+    <select id="checkUserFavorite" resultType="int">
+        SELECT COUNT(1)
+        FROM user_favorite
+        WHERE user_id = #{userId} AND product_id = #{productId}
+    </select>
+    <delete id="deleteUserFavorite">
+        DELETE FROM user_favorite
+        WHERE user_id = #{userId} AND product_id = #{productId}
+    </delete>
+    <select id="searchByKeyword" resultMap="FavoriteVOMap">
+        SELECT
+            uf.id,
+            uf.product_id,
+            p.title AS product_title,
+            p.brief AS product_brief,
+            pi.url AS main_image_url,
+            uf.created_at
+        FROM user_favorite uf
+                 LEFT JOIN product p ON uf.product_id = p.id
+                 LEFT JOIN product_image pi ON p.id = pi.product_id AND pi.image_type = 0
+        WHERE uf.user_id = #{userId} AND p.title LIKE CONCAT('%',#{keyword},'%')
+        ORDER BY uf.created_at DESC
+    </select>
+</mapper>

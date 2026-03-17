@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.reyn.mapper.RecommendationMapper">
+
+    <resultMap id="HomeRecommendationDTOResultMap" type="com.reyn.objects.dto.HomeRecommendationDTO">
+        <id property="productId" column="product_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="title" column="title"/>
+        <result property="brief" column="brief"/>
+        <result property="mainImage" column="main_image"/>
+        <result property="price" column="price"/>
+        <result property="sales" column="sales"/>
+        <result property="merchantId" column="merchant_id"/>
+        <result property="shopName" column="shop_name"/>
+        <result property="categoryName" column="category_name"/>
+        <result property="hasTraceability" column="has_traceability"/>
+    </resultMap>
+
+    <select id="listAllUserPurchaseHistory" resultMap="HomeRecommendationDTOResultMap">
+        SELECT
+            p.id AS product_id,
+            uo.buyer_id AS user_id,
+            p.title,
+            p.brief,
+            pi.url AS main_image,
+            s.price,
+            p.sales,
+            m.id AS merchant_id,
+            m.name AS shop_name,
+            pc.name AS category_name,
+            CASE WHEN pt.id IS NOT NULL THEN 1 ELSE 0 END AS has_traceability
+        FROM
+            user_order uo
+        JOIN
+            order_detail od ON uo.id = od.order_id
+        JOIN
+            product p ON od.product_id = p.id
+        LEFT JOIN
+            (SELECT product_id, url FROM product_image WHERE image_type = 0) pi ON p.id = pi.product_id
+        LEFT JOIN
+            (SELECT product_id, MIN(price) AS price FROM sku GROUP BY product_id) s ON p.id = s.product_id
+        LEFT JOIN
+            merchant m ON p.merchant_id = m.id
+        LEFT JOIN
+            product_category pc ON p.category_id = pc.id
+        LEFT JOIN
+            product_traceability pt ON p.id = pt.product_id
+    </select>
+
+    <select id="listPurchasedProductIdsByUserId" resultType="java.lang.Long">
+        SELECT DISTINCT
+            od.product_id
+        FROM
+            user_order uo
+        JOIN
+            order_detail od ON uo.id = od.order_id
+        WHERE
+            uo.buyer_id = #{userId}
+    </select>
+
+    <select id="listTopSellingProducts" resultMap="HomeRecommendationDTOResultMap">
+        SELECT
+            p.id AS product_id,
+            p.title,
+            p.brief,
+            pi.url AS main_image,
+            s.price,
+            p.sales,
+            m.id AS merchant_id,
+            m.name AS shop_name,
+            pc.name AS category_name,
+            CASE WHEN pt.id IS NOT NULL THEN 1 ELSE 0 END AS has_traceability
+        FROM
+            product p
+        LEFT JOIN
+            (SELECT product_id, url FROM product_image WHERE image_type = 0) pi ON p.id = pi.product_id
+        LEFT JOIN
+            (SELECT product_id, MIN(price) AS price FROM sku GROUP BY product_id) s ON p.id = s.product_id
+        LEFT JOIN
+            merchant m ON p.merchant_id = m.id
+        LEFT JOIN
+            product_category pc ON p.category_id = pc.id
+        LEFT JOIN
+            product_traceability pt ON p.id = pt.product_id
+        ORDER BY
+            p.sales DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

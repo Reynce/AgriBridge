@@ -1,0 +1,9 @@
+package com.reyn.mapper;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.reyn.objects.entity.UserOrder;
+import org.apache.ibatis.annotations.Mapper;
+
+@Mapper
+public interface UserOrderMapper extends BaseMapper<UserOrder> {
+}

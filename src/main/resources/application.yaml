@@ -1,0 +1,112 @@
+# 系统自定义相关配置
+system-diy-cfg:
+  upload-dir: 'E:\upload\agri_upload'
+  default-pwd: ${system-diy-cfg.default-pwd}
+
+server:
+  # 端口
+  port: 8081
+
+############## Sa-Token 配置 (文档: https://sa-token.cc) ##############
+sa-token:
+  # token 名称（同时也是 cookie 名称）
+  token-name: Authorization
+  # token 有效期（单位：秒） 默认30天，-1 代表永久有效
+  timeout: 2592000
+  # token 最低活跃频率（单位：秒），如果 token 超过此时间没有访问系统就会被冻结，默认-1 代表不限制，永不冻结
+  active-timeout: -1
+  # 在多人登录同一账号时，是否共用一个 token （为 true 时所有登录共用一个 token, 为 false 时每次登录新建一个 token）
+  is-share: true
+  # 是否输出操作日志
+  is-log: true
+#  # 指定 token 提交时的前缀(可在读取 Token 时裁剪掉 Bearer，成功获取xxxx-xxxx-xxxx-xxxx)
+#  token-prefix: Bearer
+#  # 指定 Cookie 模式下自动填充 token 提交前缀(由于Cookie中无法存储空格字符，所以配置 Token 前缀后，Cookie 模式将会失效, 需要打开Cookie 模式自动填充前缀)
+#  cookie-auto-fill-prefix: true
+  # jwt秘钥
+  jwt-secret-key: ${sa-token.jwt-secret-key}
+
+############## spring相关配置 ##############
+spring:
+  profiles:
+    include: local # 包含本地配置文件
+  datasource:
+    url: jdbc:mysql://localhost:3306/agri_bridge?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
+    username: ${spring.datasource.username}
+    password: ${spring.datasource.password}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+  # redis配置
+  redis:
+    # Redis数据库索引（默认为0）
+    database: 1
+    # Redis服务器地址
+    host: 127.0.0.1
+    # Redis服务器连接端口
+    port: 6379
+    # Redis服务器连接密码（默认为空）
+    password: ${spring.redis.password}
+    # 连接超时时间
+    timeout: 10s
+    lettuce:
+      pool:
+        # 连接池最大连接数
+        max-active: 200
+        # 连接池最大阻塞等待时间（使用负值表示没有限制）
+        max-wait: -1ms
+        # 连接池中的最大空闲连接
+        max-idle: 10
+        # 连接池中的最小空闲连接
+        min-idle: 0
+  # 邮箱发生配置
+  mail:
+    host: smtp.qq.com # 邮箱SMTP服务器地址，根据实际邮箱服务商填写
+    port: 465 # 通常SSL端口为465，普通端口为25
+    username: ${spring.mail.username} # 发件人邮箱
+    password: ${spring.mail.password} # 为实际邮箱的授权码
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+          timeout: 10000 # 连接超时时间10秒
+          connectiontimeout: 10000 # 连接建立超时时间10秒
+          writetimeout: 10000 # 写入超时时间10秒
+          starttls:
+            enable: true
+    default-encoding: UTF-8
+########### 日志配置 - 开发环境开启SQL日志###########
+logging:
+  level:
+    com.baomidou.mybatisplus: debug
+    com.reyn.mapper: debug
+    org.apache.ibatis: debug
+    org.apache.ibatis.jdbc.ScriptRunner: debug
+
+# MyBatis-Plus 配置
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl  # 打印SQL到控制台
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+
+#阿里云OSS配置
+aliyun:
+  oss:
+    endpoint: oss-cn-hangzhou.aliyuncs.com        # 地域
+    access-key-id: ${aliyun.oss.access-key-id}       # AccessKey ID
+    access-key-secret: ${aliyun.oss.access-key-secret} # AccessKey Secret
+    bucket-name: reyn-bucket
+
+# 高德地图配置
+gaode:
+  map:
+    web-service-key: ${gaode.map.web-service-key}
+    js-api-key: ${gaode.map.js-api-key}
+    rest-api-url: https://restapi.amap.com/v3
