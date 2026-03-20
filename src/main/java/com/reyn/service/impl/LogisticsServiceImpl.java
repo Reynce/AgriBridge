@@ -102,7 +102,7 @@ public class LogisticsServiceImpl implements LogisticsService {
         if (logisticsInfo != null) {
             LogisticsInfoVO infoVO = new LogisticsInfoVO();
             BeanUtils.copyProperties(logisticsInfo, infoVO);
-            infoVO.setShippedStatus(1);
+            infoVO.setShippedStatus(1L);
             displayVO.setLogisticsInfo(infoVO);
         }
 

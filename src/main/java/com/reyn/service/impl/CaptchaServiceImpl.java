@@ -43,6 +43,15 @@ public class CaptchaServiceImpl implements CaptchaService {
 
     @Override
     public SaResult generateCaptcha() throws IOException {
+        // 判断是否开启图形验证码
+        boolean captchaEnabled = sysConfigService.selectConfigByKeyBoolean("sys.user.captchaEnabled", true);
+        CaptchaVO captchaVO = new CaptchaVO();
+        captchaVO.setCaptchaEnabled(captchaEnabled);
+
+        if (!captchaEnabled) {
+            return SaResult.data(captchaVO);
+        }
+
         // 生成验证码文本和图片
         String captchaText = CaptchaUtil.generateText();
         BufferedImage image = CaptchaUtil.createImage(captchaText);
@@ -57,7 +66,6 @@ public class CaptchaServiceImpl implements CaptchaService {
         String base64Image = imageToBase64(image);
 
         // 构建返回结果
-        CaptchaVO captchaVO = new CaptchaVO();
         captchaVO.setCaptchaKey(captchaKey);
         captchaVO.setCaptchaImage(base64Image);
 

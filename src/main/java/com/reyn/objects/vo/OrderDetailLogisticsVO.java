@@ -12,7 +12,7 @@ public class OrderDetailLogisticsVO {
     private BigDecimal price;
     private Integer quantity;
     private String productMainImage;
-    private Byte shippedStatus; // 0未发货，1已发货，2已签收
+    private Long shippedStatus; // 0未发货，1已发货，2已签收
 
     private String trackingNumber;
     private String logisticsCompany;

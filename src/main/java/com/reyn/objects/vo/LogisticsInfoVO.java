@@ -13,5 +13,5 @@ public class LogisticsInfoVO {
     private String destination;         // 目的地
     private Date shippedAt;             // 发货时间
     private Date deliveredAt;           // 签收时间
-    private Integer shippedStatus;      // 物流状态：0未发货，1已发货，2已签收
+    private Long shippedStatus;      // 物流状态：0未发货，1已发货，2已签收
 }

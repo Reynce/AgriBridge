@@ -14,6 +14,6 @@ public class OrderDetailVO {
     private Integer quantity;
     private BigDecimal price;
     private String imgUrl;
-    private Integer shippedStatus;
+    private Long shippedStatus;
     private Byte isReview;
 }

@@ -26,4 +26,18 @@ public interface SysConfigService extends IService<SysConfig> {
      * @return 参数键值
      */
     int selectConfigByKeyInt(String configKey, int defaultValue);
+
+    /**
+     * 根据键名查询参数配置并转换为boolean
+     *
+     * @param configKey 参数键名
+     * @param defaultValue 默认值
+     * @return 参数键值
+     */
+    boolean selectConfigByKeyBoolean(String configKey, boolean defaultValue);
+
+    /**
+     * 刷新所有配置缓存
+     */
+    void refreshCache();
 }

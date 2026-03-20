@@ -6,4 +6,5 @@ import lombok.Data;
 public class CaptchaVO {
     private String captchaKey;
     private String captchaImage;
+    private Boolean captchaEnabled;
 }

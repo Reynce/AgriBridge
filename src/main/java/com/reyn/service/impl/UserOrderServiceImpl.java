@@ -13,6 +13,7 @@ import com.reyn.objects.entity.*;
 import com.reyn.objects.vo.OrderDetailVO;
 import com.reyn.objects.vo.OrderVO;
 import com.reyn.objects.vo.PayOrderVO;
+import com.reyn.service.SysConfigService;
 import com.reyn.service.UserCartService;
 import com.reyn.service.UserOrderService;
 import com.reyn.utils.AddressParser;
@@ -20,6 +21,7 @@ import com.reyn.utils.LoginHelper;
 import com.reyn.utils.PageResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,16 +32,31 @@ import java.util.*;
 import static com.reyn.utils.SystemConstants.ORDER_TTL_MILLISECONDS;
 
 @Service
-@RequiredArgsConstructor
 public class UserOrderServiceImpl extends ServiceImpl<UserOrderMapper, UserOrder> implements UserOrderService {
 
-    private final OrderDetailMapper orderDetailMapper;
-    private final AddressMapper addressMapper;
-    private final SkuMapper skuMapper;
-    private final UserCartService userCartService;
-    private final ProductMapper productMapper;
-    private final ProductImageMapper productImageMapper;
-    private final UserOrderMapper userOrderMapper;
+    @Autowired
+    private OrderDetailMapper orderDetailMapper;
+
+    @Autowired
+    private AddressMapper addressMapper;
+
+    @Autowired
+    private SkuMapper skuMapper;
+
+    @Autowired
+    private UserCartService userCartService;
+
+    @Autowired
+    private ProductMapper productMapper;
+
+    @Autowired
+    private ProductImageMapper productImageMapper;
+
+    @Autowired
+    private UserOrderMapper userOrderMapper;
+
+    @Autowired
+    private SysConfigService sysConfigService;
 
     @Override
     @Transactional
@@ -118,6 +135,7 @@ public class UserOrderServiceImpl extends ServiceImpl<UserOrderMapper, UserOrder
             detail.setPrice(sku.getPrice());
             detail.setProductId(sku.getProductId());
             detail.setSallerId(productMapper.getProductSallerIdBySkuId(item.getSkuId()));
+            detail.setShippedStatus(0L); // 初始状态：未发货
 
             orderDetailMapper.insert(detail);
         }
@@ -144,26 +162,21 @@ public class UserOrderServiceImpl extends ServiceImpl<UserOrderMapper, UserOrder
 
     private OrderVO buildOrderVO(UserOrder order, List<OrderItemDTO> orderItems) {
         OrderVO vo = new OrderVO();
-        vo.setId(order.getId());
-        vo.setOrderNo(order.getOrderNo());
-        vo.setBuyerId(order.getBuyerId());
-        vo.setTotalPrice(order.getTotalPrice());
-        vo.setOrderStatus(order.getOrderStatus());
-        vo.setPaymentStatus(order.getPaymentStatus());
-        vo.setShippingAddress(order.getShippingAddress());
-        vo.setCreatedAt(order.getCreatedAt());
-        vo.setUpdatedAt(order.getUpdatedAt());
+        BeanUtils.copyProperties(order, vo);
 
         // 构建订单详情列表（这里简化处理，实际可能需要从数据库查询）
         List<OrderDetailVO> details = new ArrayList<>();
         for (OrderItemDTO item : orderItems) {
             OrderDetailVO detail = new OrderDetailVO();
-            detail.setSkuId(item.getSkuId());
-            detail.setQuantity(item.getQuantity());
+            BeanUtils.copyProperties(item, detail);
             // 这里需要查询具体的价格信息
             Sku sku = skuMapper.selectById(item.getSkuId());
             if (sku != null) {
                 detail.setPrice(sku.getPrice());
+                detail.setProductTitle(productMapper.getProductTitleBySkuId(item.getSkuId()));
+                detail.setImgUrl(productImageMapper.getMainImgUrlBySkuId(item.getSkuId()));
+                detail.setSkuSpecification(skuMapper.getSpecificationByIdString(item.getSkuId()));
+                detail.setShippedStatus(0L); // 初始订单项也是未发货
             }
             details.add(detail);
         }
@@ -182,14 +195,7 @@ public class UserOrderServiceImpl extends ServiceImpl<UserOrderMapper, UserOrder
         List<OrderVO> orderVOList = new ArrayList<>();
         for (UserOrder order : result.getRecords()) {
             OrderVO vo = new OrderVO();
-            vo.setId(order.getId());
-            vo.setOrderNo(order.getOrderNo());
-            vo.setTotalPrice(order.getTotalPrice());
-            vo.setOrderStatus(order.getOrderStatus());
-            vo.setPaymentStatus(order.getPaymentStatus());
-            vo.setShippingAddress(order.getShippingAddress());
-            vo.setCreatedAt(order.getCreatedAt());
-            vo.setUpdatedAt(order.getUpdatedAt());
+            BeanUtils.copyProperties(order, vo);
 
             // 查询订单详情
             QueryWrapper<OrderDetail> detailWrapper = new QueryWrapper<>();
@@ -221,16 +227,6 @@ public class UserOrderServiceImpl extends ServiceImpl<UserOrderMapper, UserOrder
             return null;
         }
 
-        OrderVO vo = new OrderVO();
-        vo.setId(order.getId());
-        vo.setOrderNo(order.getOrderNo());
-        vo.setTotalPrice(order.getTotalPrice());
-        vo.setOrderStatus(order.getOrderStatus());
-        vo.setPaymentStatus(order.getPaymentStatus());
-        vo.setShippingAddress(order.getShippingAddress());
-        vo.setCreatedAt(order.getCreatedAt());
-        vo.setUpdatedAt(order.getUpdatedAt());
-
         // 查询订单详情
         QueryWrapper<OrderDetail> detailWrapper = new QueryWrapper<>();
         detailWrapper.eq("order_id", orderId);
@@ -238,21 +234,19 @@ public class UserOrderServiceImpl extends ServiceImpl<UserOrderMapper, UserOrder
 
         List<OrderDetailVO> detailVOs = new ArrayList<>();
         for (OrderDetail detail : details) {
-            OrderDetailVO detailVO = new OrderDetailVO();
-            detailVO.setId(detail.getId());
-            detailVO.setOrderId(detail.getOrderId());
-            detailVO.setQuantity(detail.getQuantity());
-            detailVO.setPrice(detail.getPrice());
+            // 使用统一转换方法，确保所有字段（包括 shippedStatus）都被正确映射
+            OrderDetailVO detailVO = this.order2orderVO(detail);
             detailVOs.add(detailVO);
         }
-        vo.setOrderDetails(detailVOs);
 
         return detailVOs;
     }
 
     private Date calculateOrderTimeoutAt(){
         Date now = new Date();
-        long milliseconds = now.getTime() + ORDER_TTL_MILLISECONDS;
+        // 从配置中获取超时时间（分钟），默认30分钟
+        int timeoutMinutes = sysConfigService.selectConfigByKeyInt("sys.order.autoCancelTime", 30);
+        long milliseconds = now.getTime() + (long) timeoutMinutes * 60 * 1000L;
         return new Date(milliseconds);
     }
 
@@ -282,11 +276,10 @@ public class UserOrderServiceImpl extends ServiceImpl<UserOrderMapper, UserOrder
 
         UserOrder userOrder = userOrderMapper.selectById(orderId);
 
+        BeanUtils.copyProperties(userOrder, payOrderVO);
+        payOrderVO.setOrderId(userOrder.getId());
         payOrderVO.setOrderDetailVOList(detailVOs);
-        payOrderVO.setOrderNo(userOrder.getOrderNo());
         payOrderVO.setAddressVO(AddressParser.parseAddress(userOrder.getShippingAddress()));
-        payOrderVO.setCreatedAt(userOrder.getCreatedAt());
-        payOrderVO.setTotalPrice(userOrder.getTotalPrice());
         return payOrderVO;
     }
 

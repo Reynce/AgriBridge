@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 public class AuthController {
     private final AuthService authService;
+    private final com.reyn.service.SysConfigService sysConfigService;
+
     @PostMapping("/login")
     @SaIgnore
     public SaResult login(@RequestBody LoginDTO loginDTO){
@@ -34,6 +36,12 @@ public class AuthController {
     public SaResult logout(){
         StpUtil.logout();
         return SaResult.ok("退出成功");
+    }
+
+    @GetMapping("/captchaEnabled")
+    @SaIgnore
+    public SaResult getCaptchaEnabled() {
+        return SaResult.data(sysConfigService.selectConfigByKeyBoolean("sys.user.captchaEnabled", true));
     }
 
     // 查询登录状态   ---- http://localhost:8081/acc/isLogin

@@ -46,12 +46,24 @@ public class SysConfigServiceImpl extends ServiceImpl<SysConfigMapper, SysConfig
 
     @Override
     public int selectConfigByKeyInt(String configKey, int defaultValue) {
-        String value = selectConfigByKey(configKey);
-        try {
-            return value != null ? Integer.parseInt(value) : defaultValue;
-        } catch (NumberFormatException e) {
-            return defaultValue;
+        String configValue = this.selectConfigByKey(configKey);
+        if (configValue != null && !configValue.isEmpty()) {
+            try {
+                return Integer.parseInt(configValue);
+            } catch (NumberFormatException e) {
+                // 如果格式不对，返回默认值
+            }
         }
+        return defaultValue;
+    }
+
+    @Override
+    public boolean selectConfigByKeyBoolean(String configKey, boolean defaultValue) {
+        String configValue = this.selectConfigByKey(configKey);
+        if (configValue != null && !configValue.isEmpty()) {
+            return Boolean.parseBoolean(configValue);
+        }
+        return defaultValue;
     }
 
     /**
@@ -77,5 +89,14 @@ public class SysConfigServiceImpl extends ServiceImpl<SysConfigMapper, SysConfig
             stringRedisTemplate.delete(SYS_CONFIG_CACHE_KEY + oldConfig.getConfigKey());
         }
         return result;
+    }
+
+    @Override
+    public void refreshCache() {
+        // 获取所有缓存键并删除
+        java.util.Set<String> keys = stringRedisTemplate.keys(SYS_CONFIG_CACHE_KEY + "*");
+        if (keys != null && !keys.isEmpty()) {
+            stringRedisTemplate.delete(keys);
+        }
     }
 }

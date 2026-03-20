@@ -27,6 +27,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserMapper userMapper;
     private final org.springframework.data.redis.core.StringRedisTemplate stringRedisTemplate;
     private final IUserBackstageService iUserBackstageService;
+    private final com.reyn.service.SysConfigService sysConfigService;
 
     @Override
     public SaResult login(LoginDTO loginDTO) {
@@ -67,7 +68,11 @@ public class AuthServiceImpl implements AuthService {
      */
     private SaResult loginByPassword(LoginDTO dto) {
         User user = findUserByAccount(dto.getAccount());
-        validateCaptcha(dto.getCaptchaKey(), dto.getCaptcha()); // 图形验证码
+        // 动态判断是否开启图形验证码
+        boolean captchaEnabled = sysConfigService.selectConfigByKeyBoolean("sys.user.captchaEnabled", true);
+        if (captchaEnabled) {
+            validateCaptcha(dto.getCaptchaKey(), dto.getCaptcha()); // 图形验证码
+        }
         validatePassword(dto.getPassword(), user.getPassword());
         saveSession(user);
         return SaResult.ok();

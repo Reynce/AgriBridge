@@ -71,4 +71,14 @@ public class SysConfigController {
         boolean success = sysConfigService.removeById(id);
         return success ? SaResult.ok("删除成功") : SaResult.error("删除失败");
     }
+
+    /**
+     * 刷新配置缓存
+     */
+    @PostMapping("/refreshCache")
+    @SaCheckRole("ROLE_ADMIN")
+    public SaResult refreshCache() {
+        sysConfigService.refreshCache();
+        return SaResult.ok("刷新成功");
+    }
 }

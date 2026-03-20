@@ -135,6 +135,7 @@ public class GroupPurchaseQuoteServiceImpl implements GroupPurchaseQuoteService 
         detail.setQuantity(request.getQuantity());
         detail.setPrice(quote.getQuotedPrice());
         detail.setSallerId(quote.getSellerId());
+        detail.setShippedStatus(0L); // 初始状态：未发货
 
         orderDetailService.save(detail);
 
